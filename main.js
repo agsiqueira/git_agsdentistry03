@@ -405,9 +405,11 @@ startIdlePlayback() {
                 const videoURL = this.getVideoUrlById(this.config.teethReactionVideoId);
 
                 this.state.logData.push([
+                    this.state.sessionId,
                     "[SYSTEM ACTION]",
                     "User inspected teeth",
-                    "teeth_inspection"
+                    "teeth_inspection",
+                    "-"
                 ]);
 
                 const idle = this.elements.idleVideo;
@@ -890,9 +892,11 @@ async playVideoNow(videoUrl) {
         console.log("Triggering opioid prompt video:", videoUrl);
 
         this.state.logData.push([
+            this.state.sessionId,
             "[SYSTEM TIMER] Juan opioid request",
             this.config.opioidText,
-            this.config.opioidVideoId
+            this.config.opioidVideoId,
+            "-"
         ]);
 
         this.appendMessage(this.config.opioidText, "bot");
@@ -952,6 +956,7 @@ async playVideoNow(videoUrl) {
                 ? res.answer
                 : "Sorry, I could not generate a response.";
             const replyId = this.normalizeReplyId(res.answer_index);
+            const ragSimilarity = res.similarity;
 
             botBubble.textContent = this.formatChatMessageWithTime(replyText);
 
@@ -976,7 +981,7 @@ if (this.isIntentVideo(replyId)) {
                 this.state.numUnfocusedQuestions++;
             }
 
-            this.state.logData.push([text, replyText, replyId]);
+            this.state.logData.push([this.state.sessionId, text, replyText, replyId, ragSimilarity]);
 
             console.log("Num Unfocused Questions:", this.state.numUnfocusedQuestions);
             if (this.state.numUnfocusedQuestions >= 3) {
@@ -1202,19 +1207,23 @@ playAudioReply() {
     },
 
     async createLogFile() {
-        const formUrl = "https://docs.google.com/forms/d/e/1FAIpQLSfPxO3FT8BRMBOmWop4U7ljOiOE5lnTIb3nqTPvoFwcKqJxxQ/formResponse";
+        const formUrl = "https://docs.google.com/forms/d/e/1FAIpQLScmbr_T_9LrOx_SxyMz46RM0H7aV-yMJ5bDtjvYEpKpQpoPzw/formResponse";
         const fieldIds = {
-            question: "entry.413257006",
-            answer: "entry.253578126",
-            intentId: "entry.329507193"
+            sessionid: "entry.145903732",
+            question: "entry.460461081",
+            answer: "entry.1772229513",
+            intentId: "entry.1138118407",
+            similarity: "entry.1655046755"
         };
 
         for (const row of this.state.logData) {
             try {
                 const formData = new FormData();
-                formData.append(fieldIds.question, row[0]);
-                formData.append(fieldIds.answer, row[1]);
-                formData.append(fieldIds.intentId, row[2]);
+                formData.append(fieldIds.sessionid, row[0]);
+                formData.append(fieldIds.question, row[1]);
+                formData.append(fieldIds.answer, row[2]);
+                formData.append(fieldIds.intentId, row[3]);
+                formData.append(fieldIds.similarity, row[4]);
 
                 await fetch(formUrl, {
                     method: "POST",
